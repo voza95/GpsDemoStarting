@@ -8,9 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -26,6 +24,8 @@ class MainActivity : AppCompatActivity() {
     //    Google's API for location services. The majority of the app functions using this class.
     lateinit var mFusedLocation: FusedLocationProviderClient
 
+    lateinit var locationCallBack: LocationCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -38,6 +38,13 @@ class MainActivity : AppCompatActivity() {
         mLocationRequest.fastestInterval = (FAST_UPDATE_INTERVAL * 1000).toLong()
         mLocationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
 
+        locationCallBack = object : LocationCallback(){
+            override fun onLocationResult(p0: LocationResult?) {
+                super.onLocationResult(p0)
+                p0?.lastLocation?.let { updateUIValues(location = it) }
+            }
+        }
+
         sw_gps.setOnClickListener {
             if (sw_gps.isChecked) {
                 //most accurate - use GPS
@@ -48,7 +55,51 @@ class MainActivity : AppCompatActivity() {
                 tv_sensor.text = "Using Towers + WIFI"
             }
         }
+        sw_locationsupdates.setOnClickListener {
+            if (sw_locationsupdates.isChecked){
+                //turn on location tracking
+                startLocationUpdates()
+            }else{
+               //turn off tracking
+                stopLocationUpdates()
+            }
+        }
+
         updateGPS()
+    }
+
+    private fun startLocationUpdates() {
+        tv_updates.text = "Location is being tracker"
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            mFusedLocation.requestLocationUpdates(mLocationRequest, locationCallBack, null)
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
+
+    }
+
+    private fun stopLocationUpdates() {
+        tv_updates.text = "Location is NOT being tracked"
+        tv_lat.text = "Not tracking location"
+        tv_lon.text = "Not tracking location"
+        tv_speed.text = "Not tracking location"
+        tv_address.text = "Not tracking location"
+        tv_accuracy.text = "Not tracking location"
+        tv_altitude.text = "Not tracking location"
+        tv_sensor.text = "Not tracking location"
+
+        mFusedLocation.removeLocationUpdates(locationCallBack)
     }
 
     override fun onRequestPermissionsResult(
@@ -118,4 +169,8 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+}
+
+private fun FusedLocationProviderClient.requestLocationUpdates(mLocationRequest: LocationRequest) {
+
 }
