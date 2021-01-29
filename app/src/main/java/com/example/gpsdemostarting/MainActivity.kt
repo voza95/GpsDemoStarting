@@ -1,6 +1,7 @@
 package com.example.gpsdemostarting
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
@@ -27,6 +28,16 @@ class MainActivity : AppCompatActivity() {
     lateinit var mFusedLocation: FusedLocationProviderClient
 
     lateinit var locationCallBack: LocationCallback
+
+    //variable to remember if we are tracking location or not
+    var updateOn: Boolean = false
+
+    // current location
+    lateinit var currentLocation: Location
+
+    //list of saved locations
+    var savedLocation: ArrayList<Location> = ArrayList()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +76,25 @@ class MainActivity : AppCompatActivity() {
                 //turn off tracking
                 stopLocationUpdates()
             }
+        }
+
+        btn_newWayPoint.setOnClickListener {
+            //get the gps location
+            if (::currentLocation.isInitialized){
+                var myApplication: MyApplication = applicationContext as MyApplication
+                savedLocation = myApplication.myLocation
+                savedLocation.add(currentLocation)
+            }
+            //add the new location to the global list
+        }
+
+        btn_showWayPointList.setOnClickListener {
+            val i = Intent(this@MainActivity,SaveLocationListActivity::class.java)
+            startActivity(i)
+        }
+
+        btn_showMap.setOnClickListener {
+            startActivity(Intent(this@MainActivity,MapsActivity::class.java))
         }
 
         updateGPS()
@@ -138,7 +168,11 @@ class MainActivity : AppCompatActivity() {
             mFusedLocation.lastLocation.addOnSuccessListener(this, object: OnSuccessListener<Location>{
                 override fun onSuccess(location: Location?) {
                     // we got permission, Put the value of location. XXX into UI components.
+                    if (location != null) {
+                        currentLocation = location
+                    }
                     location?.let { updateUIValues(location = it) }
+
                 }
             })
         }else{
@@ -175,5 +209,12 @@ class MainActivity : AppCompatActivity() {
             tv_address.text = "N/A"
             e.printStackTrace()
         }
+
+        var myApplication: MyApplication = applicationContext as MyApplication
+        savedLocation = myApplication.myLocation
+
+        // show the number of waypoints saved.
+        tv_countOfCrumbs.text = savedLocation.size.toString()
+
     }
 }
