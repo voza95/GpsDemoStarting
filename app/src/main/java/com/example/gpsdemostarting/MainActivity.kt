@@ -2,6 +2,8 @@ package com.example.gpsdemostarting
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -60,7 +62,7 @@ class MainActivity : AppCompatActivity() {
                 //turn on location tracking
                 startLocationUpdates()
             }else{
-               //turn off tracking
+                //turn off tracking
                 stopLocationUpdates()
             }
         }
@@ -73,12 +75,9 @@ class MainActivity : AppCompatActivity() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+            ) == PackageManager.PERMISSION_GRANTED) {
             mFusedLocation.requestLocationUpdates(mLocationRequest, locationCallBack, null)
+            updateGPS()
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
             //                                          int[] grantResults)
@@ -168,9 +167,13 @@ class MainActivity : AppCompatActivity() {
             tv_speed.text = "N/A"
         }
 
+        var grocoder = Geocoder(this@MainActivity)
+        try {
+            var addresses: List<Address> = grocoder.getFromLocation(location.latitude, location.longitude, 1)
+            tv_address.text = addresses[0].getAddressLine(0)
+        }catch (e:Exception){
+            tv_address.text = "N/A"
+            e.printStackTrace()
+        }
     }
-}
-
-private fun FusedLocationProviderClient.requestLocationUpdates(mLocationRequest: LocationRequest) {
-
 }
